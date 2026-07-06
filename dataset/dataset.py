@@ -8,8 +8,9 @@ class Dataset(Dataset):
         self.image_dir = image_dir
         self.image_files = sorted(os.listdir(image_dir))
         self.transform = transforms.Compose([
-            transforms.Resize(224),
-            transforms.CenterCrop(224),
+            # transforms.Resize(224),
+            # transforms.CenterCrop(224),
+            transforms.Resize((704, 1248)),
             transforms.ToTensor(),
         ])
 
