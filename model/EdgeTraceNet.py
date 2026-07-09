@@ -4,35 +4,29 @@ import torch.nn.functional as F
 import torchvision.models as models
 
 class Encoder(nn.Module):
-    """
-        데이터가 들어오면 5개로 정보를 뽑아 출력한다.
-    """
     def __init__(self):
-        super(Encoder, self).__init__()
-
-        resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-        self.layer1 = nn.Sequential(
-            resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool
-        )
-        self.layer2 = resnet.layer1
-        self.layer3 = resnet.layer2
-        self.layer4 = resnet.layer3
-        self.layer5 = resnet.layer4
+        super().__init__()
+        resnet = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+        
+        self.layer0 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu)
+        self.maxpool = resnet.maxpool
+        self.layer1 = resnet.layer1  # 출력 채널: 64
+        self.layer2 = resnet.layer2  # 출력 채널: 128
+        self.layer3 = resnet.layer3  # 출력 채널: 256
+        self.layer4 = resnet.layer4  # 출력 채널: 512
 
     def forward(self, x):
-        # x : [B, 3, H, W]
-        x1 = self.layer1(x)
-        x2 = self.layer2(x1)
-        x3 = self.layer3(x2)
-        x4 = self.layer4(x3)
-        x5 = self.layer5(x4)
 
+        x1 = self.layer0(x)
+        x2 = self.maxpool(x1)
+        x2 = self.layer1(x2)
+        x3 = self.layer2(x2)
+        x4 = self.layer3(x3)
+        x5 = self.layer4(x4)
+        
         return [x1, x2, x3, x4, x5]
-    
+
 class Decoder(nn.Module):
-    """
-        정보 5개가 들어오면 픽셀이 오른쪽과 아래 픽셀과 연결되어있을 확률을 출력한다. [B, 2, H, W]으로
-    """
     def __init__(self):
         super(Decoder, self).__init__()
 
@@ -40,64 +34,62 @@ class Decoder(nn.Module):
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         ])
 
         self.conv_layers = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(2048 + 1024, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm2d(1024),
-                nn.ReLU(inplace=True)
-            ),
-            nn.Sequential(
-                nn.Conv2d(1024 + 512, 512, kernel_size=3, padding=1),
-                nn.BatchNorm2d(512),
-                nn.ReLU(inplace=True)
-            ),
-            nn.Sequential(
-                nn.Conv2d(512 + 256, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
-                nn.ReLU(inplace=True)
-            ),
-            nn.Sequential(
-                nn.Conv2d(256 + 64, 64, kernel_size=3, padding=1),
-                nn.BatchNorm2d(64),
-                nn.ReLU(inplace=True)
-            )
+            nn.Sequential(nn.Conv2d(512 + 256, 256, kernel_size=3, padding=1), nn.BatchNorm2d(256), nn.ReLU(inplace=True)),
+            nn.Sequential(nn.Conv2d(256 + 128, 128, kernel_size=3, padding=1), nn.BatchNorm2d(128), nn.ReLU(inplace=True)),
+            nn.Sequential(nn.Conv2d(128 + 64, 64, kernel_size=3, padding=1), nn.BatchNorm2d(64), nn.ReLU(inplace=True)),
+            nn.Sequential(nn.Conv2d(64 + 64, 32, kernel_size=3, padding=1), nn.BatchNorm2d(32), nn.ReLU(inplace=True)),
+            nn.Sequential(nn.Conv2d(32, 16, kernel_size=3, padding=1), nn.BatchNorm2d(16), nn.ReLU(inplace=True))
         ])
 
-        self.block = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU()
-        )
-
-        self.final = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Conv2d(64, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.Conv2d(32, 2, kernel_size=3, padding=1),
-            nn.Sigmoid()
-        )
-
     def forward(self, features):
-        # features : [x1, x2, x3, x4, x5]
-        features[0] = self.block(features[0])
+        feats = list(features) 
+        x = feats.pop()
 
-        x = features.pop()
-
-        # Upsampling -> skip connection -> Conv
+        outputs = []
         for i in range(4):
             x = self.up_layers[i](x)
-            skip = features.pop()
+            skip = feats.pop()
             x = torch.concat([x, skip], dim=1)
             x = self.conv_layers[i](x)
-        
-        output = self.final(x)
+            outputs.append(x)
 
-        return output
+        x = self.up_layers[4](x)
+        x = self.conv_layers[4](x)
+        outputs.append(x)
+
+        return outputs[1:]
+
+class EdgeHead(nn.Module):
+    def __init__(self, in_channel=256):
+        super().__init__()
+
+        self.layer = nn.Sequential(
+            nn.Conv2d(in_channels=in_channel, out_channels=in_channel//2, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(in_channel//2),
+            nn.ReLU(inplace=True),
+
+            nn.Conv2d(in_channels=in_channel // 2, out_channels=in_channel//2, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(in_channel//2),
+            nn.ReLU(inplace=True),
+            
+            nn.Conv2d(in_channels=in_channel//2, out_channels=2, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(2),
+            nn.ReLU(inplace=True),
+
+            nn.Conv2d(in_channels=2, out_channels=2, kernel_size=1),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        edge = self.layer(x)
+
+        return edge
+
 
 class EdgeTraceNet(nn.Module):
     """
@@ -115,10 +107,25 @@ class EdgeTraceNet(nn.Module):
         self.encoder = Encoder()
         self.decoder = Decoder()
 
+        self.edgeHeads = nn.ModuleList([
+            EdgeHead(in_channel=128),
+            EdgeHead(in_channel=64),
+            EdgeHead(in_channel=32),
+            EdgeHead(in_channel=16)
+        ])
+
     def forward(self, x):
         # x : [B, 3, H, W]
         
         features = self.encoder(x)
-        output = self.decoder(features)
+        outputs = self.decoder(features)
 
-        return output
+        edges = []
+        
+        for i in range(4):
+            edges.append(self.edgeHeads[i](outputs[i]))
+
+        return {
+            'features' : outputs,
+            'edges' : edges
+        }

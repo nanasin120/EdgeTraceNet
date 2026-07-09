@@ -6,13 +6,19 @@ from torchvision import transforms
 class Dataset(Dataset):
     def __init__(self, image_dir):
         self.image_dir = image_dir
-        self.image_files = sorted(os.listdir(image_dir))
-        self.transform = transforms.Compose([
-            # transforms.Resize(224),
-            # transforms.CenterCrop(224),
-            transforms.Resize((704, 1248)),
-            transforms.ToTensor(),
+        self.image_files = sorted([
+            f for f in os.listdir(image_dir) 
+            if f.lower().endswith('.jpg')
         ])
+        
+        self.base_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.RandomCrop(size=(224, 224))
+        ])
+        
+        self.norm_transform = transforms.Normalize(
+            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+        )
 
     def __len__(self):
         return len(self.image_files)
@@ -21,8 +27,10 @@ class Dataset(Dataset):
         image_name = self.image_files[idx]
         image_path = os.path.join(self.image_dir, image_name)
 
-        image = self.transform(Image.open(image_path).convert('RGB'))
+        raw_image = self.base_transform(Image.open(image_path).convert('RGB'))
+        norm_image = self.norm_transform(raw_image)
 
         return {
-            'image' : image
+            'raw_image' : raw_image,
+            'norm_image' : norm_image
         }
