@@ -121,16 +121,18 @@ python eval.py
 
 | Method / Stage | Best Threshold | Precision | Recall | F1-Score |
 | :--- | :---: | :---: | :---: |  :---: |
-| **EdgeTraceNet (Initial)** | 0.000 | 0.000 | 0.000 | 0.000 |
-| **EdgeTraceNet (100)** | 0.000 | 0.000 | 0.000 | 0.000 |
-| **EdgeTraceNet (200)** | 0.000 | 0.000 | 0.000 | 0.000 |
-| **EdgeTraceNet (300)** | 0.000 | 0.000 | 0.000 | 0.000 |
-| **EdgeTraceNet (400)** | 0.000 | 0.000 | 0.000 | 0.000 |
-| **EdgeTraceNet (500)** | 0.000 | 0.000 | 0.000 | 0.000 |
+| **EdgeTraceNet (Initial)** | 0.1 | 0.0187 | 1.000 | 0.0367 |
+| **EdgeTraceNet (100)** | 0.9 | 0.0466 | 0.2118 | 0.0764 |
+| **EdgeTraceNet (200)** | 0.9 | 0.0591 | 0.1834 | 0.0894 |
+| **EdgeTraceNet (300)** | 0.9 | 0.0547 | 0.1899 | 0.0849 |
+| **EdgeTraceNet (400)** | 0.9 | 0.0526 | 0.1943 | 0.0828 |
+| **EdgeTraceNet (500)** | 0.9 | 0.0531 | 0.1929 | 0.0833 |
 
 ### 5-2. 결과 (Results)
 
-(추후 500 에폭 최종 완주 후 시각화 결과 이미지 추가 예정)
+차례대로 0 epoch, 100 epoch, 200 epoch, 300 epoch, 400 epoch, 500 epoch입니다.
+
+<img width="1292" height="1300" alt="ezgif com-gif-maker" src="https://github.com/user-attachments/assets/d033fe67-63b3-4b15-add3-b7cc19cb9bcc" />
 
 ---
 
