@@ -30,14 +30,6 @@ class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
 
-        self.up_layers = nn.ModuleList([
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        ])
-
         self.conv_layers = nn.ModuleList([
             nn.Sequential(nn.Conv2d(512 + 256, 256, kernel_size=3, padding=1), nn.BatchNorm2d(256), nn.ReLU(inplace=True)),
             nn.Sequential(nn.Conv2d(256 + 128, 128, kernel_size=3, padding=1), nn.BatchNorm2d(128), nn.ReLU(inplace=True)),
@@ -46,19 +38,21 @@ class Decoder(nn.Module):
             nn.Sequential(nn.Conv2d(32, 16, kernel_size=3, padding=1), nn.BatchNorm2d(16), nn.ReLU(inplace=True))
         ])
 
-    def forward(self, features):
+    def forward(self, features, x_shape):
         feats = list(features) 
         x = feats.pop()
 
         outputs = []
         for i in range(4):
-            x = self.up_layers[i](x)
             skip = feats.pop()
+            x = F.interpolate(x, size=(skip.shape[2], skip.shape[3]), mode='bilinear', align_corners=True)
             x = torch.concat([x, skip], dim=1)
             x = self.conv_layers[i](x)
             outputs.append(x)
 
-        x = self.up_layers[4](x)
+        target_h, target_w = x_shape[2], x_shape[3]
+        
+        x = F.interpolate(x, size=(target_h, target_w), mode='bilinear', align_corners=True)
         x = self.conv_layers[4](x)
         outputs.append(x)
 
@@ -118,14 +112,16 @@ class EdgeTraceNet(nn.Module):
         # x : [B, 3, H, W]
         
         features = self.encoder(x)
-        outputs = self.decoder(features)
+        outputs = self.decoder(features, x.shape)
 
-        edges = []
+        # edges = []
+
+        edges = self.edgeHeads[-1](outputs[-1])
         
-        for i in range(4):
-            edges.append(self.edgeHeads[i](outputs[i]))
+        # for i in range(4):
+        #     edges.append(self.edgeHeads[i](outputs[i]))
 
         return {
-            'features' : outputs,
+            'features' : outputs[-1],
             'edges' : edges
         }
