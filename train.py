@@ -133,26 +133,27 @@ def train():
         scheduler.step()
         print(f'==> Epoch {epoch} 완료 Train Loss : {avg_train_loss:.4f} Color Loss : {avg_train_color_loss:.4f} Feature Loss : {avg_train_feature_loss:.4f} \n Regular Loss : {avg_train_regular_loss:.4f} Binary Loss : {avg_train_binary_loss:.4f} Thick Loss : {avg_train_thick_loss:.4f} Time : {epoch_end_time-epoch_start_time:.4f}')
 
-        with torch.no_grad():
-            model.eval()
+        if epoch % 10 == 0:
+            with torch.no_grad():
+                model.eval()
 
-            current_f1, current_th, current_prec, current_rec = evaluate(model, device, test_loader)
+                current_f1, current_th, current_prec, current_rec = evaluate(model, device, test_loader)
 
-            print(f"👉 Epoch {epoch} 결과 - Best Threshold: {current_th:.1f} | Best F1-Score: {current_f1:.4f} | Best precision : {current_prec:.4f} | Best recall: {current_rec:.4f}")
+                print(f"👉 Epoch {epoch} 결과 - Best Threshold: {current_th:.1f} | Best F1-Score: {current_f1:.4f} | Best precision : {current_prec:.4f} | Best recall: {current_rec:.4f}")
 
-            if current_f1 > best_f1:
-                best_f1 = current_f1
-                
-                save_path = os.path.join(model_save_path, 'best_model_epoch.pth')
-                checkpoint = {
-                    'state_dict': model.state_dict(),
-                    'best_threshold': float(current_th),
-                    'best_f1': float(best_f1),
-                    'epoch': int(epoch)
-                }
-                torch.save(checkpoint, save_path)
+                if current_f1 > best_f1:
+                    best_f1 = current_f1
+                    
+                    save_path = os.path.join(model_save_path, 'best_model_epoch.pth')
+                    checkpoint = {
+                        'state_dict': model.state_dict(),
+                        'best_threshold': float(current_th),
+                        'best_f1': float(best_f1),
+                        'epoch': int(epoch)
+                    }
+                    torch.save(checkpoint, save_path)
 
-                print(f"New Best Model Saved with F1-Score: {best_f1:.4f} at Threshold {current_th:.1f}!")
+                    print(f"New Best Model Saved with F1-Score: {best_f1:.4f} at Threshold {current_th:.1f}!")
 
         if epoch % args.weight_save_interval == 0:
             save_path = os.path.join(model_save_path, f'model_epoch_{epoch}.pth')
