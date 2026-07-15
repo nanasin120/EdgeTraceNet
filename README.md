@@ -56,19 +56,16 @@ EdgeTraceNet은 정답 라벨(Ground Truth) 없이 이미지의 픽셀 간 연�
 
 ### 5-1. 정량적 평가 지표 (Evaluation Metrics)
 
-| Method | Precision | Recall | F1-Score |
-| :--- | :---: | :---: | :---: |
-| **EdgeTraceNet (Ours)** | 0.000 | 0.000 | 0.000 |
+| Method / Stage | Best Threshold | Precision | Recall | F1-Score |
+| :--- | :---: | :---: | :---: |  :---: |
+| **EdgeTraceNet (Initial)** | 0.000 | 0.000 | 0.000 | 0.000 |
+| **EdgeTraceNet (100)** | 0.000 | 0.000 | 0.000 | 0.000 |
+| **EdgeTraceNet (200)** | 0.000 | 0.000 | 0.000 | 0.000 |
+| **EdgeTraceNet (300)** | 0.000 | 0.000 | 0.000 | 0.000 |
+| **EdgeTraceNet (400)** | 0.000 | 0.000 | 0.000 | 0.000 |
+| **EdgeTraceNet (500)** | 0.000 | 0.000 | 0.000 | 0.000 |
 
 ### 5-2. 결과 (Results)
-
-500 에포크를 돌린 결과 입니다.
-
-<img width="908" height="916" alt="vis_epoch_500" src="https://github.com/user-attachments/assets/ab35ac34-f2ef-42de-a57d-27954fed6b24" />
-
-**설명:** 
-
-나쁘지는 않지만 보이지 않는 무언가의 윤곽선이 잡히는 모습이 보입니다.
 
 ---
 
