@@ -15,7 +15,7 @@ def evaluate(model=None, device=None, test_loader=None):
     gt_dir = args.gt_dir
 
     if not os.path.exists(img_dir) or not os.path.exists(gt_dir):
-        print(f"⚠️ 테스트 경로가 올바르지 않습니다. 경로를 확인해 주세요.\nImg: {img_dir}\nGT: {gt_dir}")
+        print(f"⚠️ test path are invalid. check the paths \nImg: {img_dir}\nGT: {gt_dir}")
         return
 
     if device is None:
@@ -29,9 +29,9 @@ def evaluate(model=None, device=None, test_loader=None):
             checkpoint = torch.load(best_model_file, map_location=device, weights_only=True)
             model.load_state_dict(checkpoint['state_dict'])
 
-            print(f"✅ 가중치 불러오기 성공: {best_model_file}")
+            print(f"✅ Successfully loaded weights: {best_model_file}")
         else:
-            print(f"⚠️ 저장된 가중치 파일이 없습니다. 초기화 상태로 진행합니다: {best_model_file}")
+            print(f"⚠️ No saved weight file found. Proceeding with initialized state: {best_model_file}")
 
     model.eval()
 
@@ -63,23 +63,23 @@ def evaluate(model=None, device=None, test_loader=None):
             pred_edge = torch.max(edge_right, edge_down).cpu().numpy() # [H, W]
 
             for th in thresholds:
-                # 모델 예측값을 이진화
+                # binarize the precited edge map
                 pred_binary = (pred_edge >= th).astype(np.float32)
                 
                 tps, fps, fns = [], [], []
                 for gt in gt_boundaries:
-                    # True Positive (예측도 1, 정답도 1)
+                    # True Positive (predicted 1, ground truth 1)
                     tp = np.sum((pred_binary == 1) & (gt == 1))
-                    # False Positive (예측은 1, 정답은 0)
+                    # False Positive (predicted 1, ground truth 0)
                     fp = np.sum((pred_binary == 1) & (gt == 0))
-                    # False Negative (예측은 0, 정답은 1)
+                    # False Negative (predicted 0, ground truth 1)
                     fn = np.sum((pred_binary == 0) & (gt == 1))
                     
                     tps.append(tp)
                     fps.append(fp)
                     fns.append(fn)
                 
-                # 여러 명의 평가 결과를 평균하여 누적합에 추가
+                # mean of tps, fps, fns for the current threshold across all ground truths
                 sum_tp[th] += np.mean(tps)
                 sum_fp[th] += np.mean(fps)
                 sum_fn[th] += np.mean(fns)
@@ -112,7 +112,7 @@ def evaluate(model=None, device=None, test_loader=None):
             best_rec = recall
 
     # print("====================================================================")
-    # print(f"🏆 최적 임계값 (Best Threshold): {best_th:.1f}")
+    # print(f"🏆 Best Threshold: {best_th:.1f}")
     # print(f"✨ Best Precision: {best_prec:.4f}")
     # print(f"✨ Best Recall: {best_rec:.4f}")
     # print(f"🔥 Best F1-Score: {best_f1:.4f}")

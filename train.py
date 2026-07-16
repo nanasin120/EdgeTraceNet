@@ -37,7 +37,7 @@ img_save_path = args.img_save_path
 if not os.path.exists(model_save_path): os.makedirs(model_save_path)
 if not os.path.exists(img_save_path): os.makedirs(img_save_path)
 
-# google colab
+# if use google colab, use this path
 # img_dir = r"/content/data_local/BSDS500/images/"
 # gt_dir = r"/content/data_local/BSDS500/ground_truth/"
 

@@ -6,6 +6,11 @@ import os
 import random
 from config import get_args
 
+"""
+    bring the best model and test it on the test dataset.
+    save the result as a 3x3 grid image.
+"""
+
 args = get_args()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -23,8 +28,9 @@ raw_image = sample['raw_image'].to(device).unsqueeze(0)
 
 model = EdgeTraceNet().to(device)
 
-best_model_file = os.path.join(model_save_path, 'model_epoch_0.pth')
+best_model_file = os.path.join(model_save_path, 'best_model_epoch.pth')
 checkpoint = torch.load(best_model_file, map_location=device, weights_only=True)
+
 model.load_state_dict(checkpoint['state_dict'])
 model.eval()
 

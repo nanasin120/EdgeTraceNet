@@ -4,6 +4,11 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 
 class Dataset(Dataset):
+    """
+        it has two modes: train and test. 
+        In train mode, it returns the raw image, normalized image, and the path to the ground truth .mat file. 
+        In test mode, it returns the raw image and normalized image only. At this tiime, it returns the image in the original size.
+    """
     def __init__(self, image_dir, gt_dir, mode='train'):
         self.mode = mode.lower()
         self.image_dir = os.path.join(image_dir, self.mode)

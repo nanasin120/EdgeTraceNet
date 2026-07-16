@@ -10,10 +10,10 @@ class Encoder(nn.Module):
         
         self.layer0 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu)
         self.maxpool = resnet.maxpool
-        self.layer1 = resnet.layer1  # 출력 채널: 64
-        self.layer2 = resnet.layer2  # 출력 채널: 128
-        self.layer3 = resnet.layer3  # 출력 채널: 256
-        self.layer4 = resnet.layer4  # 출력 채널: 512
+        self.layer1 = resnet.layer1  # output channels : 64
+        self.layer2 = resnet.layer2  # output channels: 128
+        self.layer3 = resnet.layer3  # output channels: 256
+        self.layer4 = resnet.layer4  # output channels: 512
 
     def forward(self, x):
 
@@ -45,6 +45,7 @@ class Decoder(nn.Module):
         outputs = []
         for i in range(4):
             skip = feats.pop()
+            # make sure the feature map size matches the skip connection size
             x = F.interpolate(x, size=(skip.shape[2], skip.shape[3]), mode='bilinear', align_corners=True)
             x = torch.concat([x, skip], dim=1)
             x = self.conv_layers[i](x)
@@ -52,6 +53,7 @@ class Decoder(nn.Module):
 
         target_h, target_w = x_shape[2], x_shape[3]
         
+        # make sure the output size matches the input size
         x = F.interpolate(x, size=(target_h, target_w), mode='bilinear', align_corners=True)
         x = self.conv_layers[4](x)
         outputs.append(x)
@@ -59,6 +61,9 @@ class Decoder(nn.Module):
         return outputs[1:]
 
 class EdgeHead(nn.Module):
+    """
+        EdgeHead takes the feature map from the decoder and outputs a 2-channel edge map.
+    """
     def __init__(self, in_channel=256):
         super().__init__()
 
@@ -87,12 +92,13 @@ class EdgeHead(nn.Module):
 
 class EdgeTraceNet(nn.Module):
     """
-        입력 :
+        input :
             x : [B, 3, H, W]
-        출력 : 
+        output : 
             output : [B, 2, H, W]
 
-        이미지가 들어오면 하나의 픽셀이 오른쪽 픽셀, 아래 픽셀과 연결되어있을 확률을 출력 
+        EdgeTraceNet takes an image as input and outputs a 2-channel edge map
+        Each pixel in the edge map represents the probability that the pixel is connected to it's right neighbor and it's bottom neighbor.
     """
 
     def __init__(self):
@@ -113,13 +119,8 @@ class EdgeTraceNet(nn.Module):
         
         features = self.encoder(x)
         outputs = self.decoder(features, x.shape)
-
-        # edges = []
-
-        edges = self.edgeHeads[-1](outputs[-1])
         
-        # for i in range(4):
-        #     edges.append(self.edgeHeads[i](outputs[i]))
+        edges = self.edgeHeads[-1](outputs[-1])
 
         return {
             'features' : outputs[-1],

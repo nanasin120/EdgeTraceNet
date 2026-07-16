@@ -22,7 +22,7 @@ def save_image(epoch, output, image, save_path, th=0.5):
 
 def load_gt_boundaries(mat_path: Union[str, os.PathLike]) -> List[np.array]:
     """ 
-        .mat 파일에서 모든 사람이 그린 정답지를 리스트로 반환 
+        return a list of ground truth boundaries drawn by all annotators from a .mat file
     """
     mat = sio.loadmat(mat_path)
     gt_array = mat['groundTruth'][0]
