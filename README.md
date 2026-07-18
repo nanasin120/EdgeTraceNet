@@ -128,7 +128,7 @@ Major options and default values available during training are as follows. If yo
 | **EdgeTraceNet (400)** | 0.9 | 0.0526 | 0.1943 | 0.0828 |
 | **EdgeTraceNet (500)** | 0.9 | 0.0531 | 0.1929 | 0.0833 |
 
-### 5-2. 결과 (Results)
+### 5-2. Results
 
 They are 0 epoch, 100 epoch, 200 epoch, 300 epoch, 400 epoch, and 500 epoch in order.
 
